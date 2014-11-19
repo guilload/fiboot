@@ -6,17 +6,17 @@ start:
     jmp main
 
 fibonacci:
-    mov     cx, ax
-    xor     ax, ax
-    mov     bx, 0x01
+    mov     cx, ax                  ; n
+    mov     ax, 0x00                ; a = fib(0) = 0
+    mov     bx, 0x01                ; b = fib(1) = 1
 
     fibonacciloop:
-        cmp     cx, 0x00
+        cmp     cx, 0x00            ; if n == 0, we're done
         je      done
-        mov     dx, ax
-        mov     ax, bx
-        add     bx, dx
-        dec     cx
+        mov     dx, ax              ; save current value in dx
+        mov     ax, bx              ; a = b
+        add     bx, dx              ; b = a + b
+        dec     cx                  ; n--
         jmp     fibonacciloop
 
 done:
@@ -29,14 +29,14 @@ readchar:
 
 readline:
     call    readchar
-    cmp     al, 0x0d
-    je      eof
+    cmp     al, 0x0d                ; carriage return >> end of line
+    je      eol
 
     stosb
     call    printchar
     jmp     readline
 
-    eof:
+    eol:
         mov al, 0x00
         stosb
         ret
@@ -53,20 +53,30 @@ printline:
     call    printchar
     jmp     printline
 
-strlen:
-    xor     bx, bx
+ascii2int:
+    mov     ax, 0x00
+    mov     bx, 0x00                ; bx = 0, accumulator
+    mov     cl, 0x0a                ; cx = 10, multiplier
 
-    strlenloop:
-        lodsb
+    ascii2intloop:
+        lodsb                       ; al = char
         or      al, al
-        jz      strlendone
-        inc     bx
-        jmp     strlenloop
+        jz      ascii2intdone       ; if null char, we're done
 
-    strlendone:
+        sub     ax, '0'             ; char to int
+        mov     dx, ax              ; dx = int
+
+        mov     ax, bx              ; ax = bx (accumulator)
+        mul     cl                  ; ax = ax * cx = ax * 10
+
+        add     dx, ax
+        mov     bx, dx
+
+        jmp     ascii2intloop
+
+    ascii2intdone:
         mov ax, bx
         ret
-
 
 main:
     xor     ax, ax
@@ -82,8 +92,13 @@ main:
     mov     di, number
     call    readline
 
+    mov     si, number
+    call    ascii2int
+
+    call    fibonacci
+
     cli
-    hang
+    hlt
 
 
 prompt  db  "Which fibonacci number do you want to compute?", 0x0d, 0x0a, 0
